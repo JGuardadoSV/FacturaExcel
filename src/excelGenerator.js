@@ -18,6 +18,7 @@ export async function generateExcel(emisorData) {
   // Crear todas las hojas en orden
   await createDashboardSheet(workbook, emisorData);
   await createEmisorSheet(workbook, emisorData);
+  await createCorrelativosSheet(workbook);
   await createCatalogSheets(workbook);
   await createClientesSheet(workbook);
   await createProductosSheet(workbook);
@@ -219,6 +220,139 @@ async function createEmisorSheet(workbook, emisorData) {
 
   // Enlace de regreso
   row += 2;
+  sheet.getCell(`B${row}`).value = {
+    text: '← Volver al Dashboard',
+    hyperlink: '#Dashboard!A1'
+  };
+  sheet.getCell(`B${row}`).font = { color: { argb: 'FF0563C1' }, underline: true };
+}
+
+// ============================================================================
+// HOJA: CORRELATIVOS / CONFIGURACIÓN
+// ============================================================================
+async function createCorrelativosSheet(workbook) {
+  const sheet = workbook.addWorksheet('Correlativos', {
+    properties: { tabColor: { argb: 'FFFFC000' } }
+  });
+
+  sheet.columns = [
+    { width: 5 },
+    { width: 35 },
+    { width: 20 },
+    { width: 50 }
+  ];
+
+  // Título
+  sheet.mergeCells('B2:D2');
+  const titleCell = sheet.getCell('B2');
+  titleCell.value = 'CONTROL DE CORRELATIVOS';
+  titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  titleCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFC000' }
+  };
+  sheet.getRow(2).height = 35;
+
+  // Instrucciones
+  sheet.mergeCells('B4:D4');
+  const instrCell = sheet.getCell('B4');
+  instrCell.value = 'Configure aquí los números correlativos para cada tipo de factura';
+  instrCell.font = { italic: true, size: 10 };
+  instrCell.alignment = { horizontal: 'center' };
+
+  // Headers
+  const headerRow = 6;
+  sheet.getCell(`B${headerRow}`).value = 'Tipo de Documento';
+  sheet.getCell(`C${headerRow}`).value = 'Próximo Correlativo';
+  sheet.getCell(`D${headerRow}`).value = 'Descripción';
+
+  ['B', 'C', 'D'].forEach(col => {
+    const cell = sheet.getCell(`${col}${headerRow}`);
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Datos de correlativos
+  const correlativos = [
+    { tipo: 'Consumidor Final', correlativo: 1, desc: 'Facturas para consumidor final (CF)' },
+    { tipo: 'Crédito Fiscal', correlativo: 1, desc: 'Comprobante de Crédito Fiscal (CCF)' },
+    { tipo: 'Sujeto Excluido', correlativo: 1, desc: 'Facturas de Sujeto Excluido (FSE)' },
+    { tipo: 'Notas de Crédito', correlativo: 1, desc: 'Notas de crédito para anulaciones' }
+  ];
+
+  let row = 7;
+  correlativos.forEach((item) => {
+    sheet.getCell(`B${row}`).value = item.tipo;
+    sheet.getCell(`B${row}`).font = { bold: true };
+    sheet.getCell(`B${row}`).border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+
+    sheet.getCell(`C${row}`).value = item.correlativo;
+    sheet.getCell(`C${row}`).numFmt = '0';
+    sheet.getCell(`C${row}`).alignment = { horizontal: 'center' };
+    sheet.getCell(`C${row}`).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFF00' }  // Amarillo para indicar que es editable
+    };
+    sheet.getCell(`C${row}`).border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+
+    sheet.getCell(`D${row}`).value = item.desc;
+    sheet.getCell(`D${row}`).font = { italic: true, size: 9 };
+    sheet.getCell(`D${row}`).border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+
+    row++;
+  });
+
+  // Nota importante
+  row += 2;
+  sheet.mergeCells(`B${row}:D${row}`);
+  const noteCell = sheet.getCell(`B${row}`);
+  noteCell.value = '⚠️ IMPORTANTE: Actualice manualmente el correlativo después de emitir cada factura';
+  noteCell.font = { bold: true, size: 10, color: { argb: 'FFFF0000' } };
+  noteCell.alignment = { horizontal: 'center' };
+  noteCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFEB9C' }
+  };
+
+  row++;
+  sheet.mergeCells(`B${row}:D${row}`);
+  const note2Cell = sheet.getCell(`B${row}`);
+  note2Cell.value = 'Las hojas de facturación leerán automáticamente el próximo número disponible de esta tabla';
+  note2Cell.font = { italic: true, size: 9 };
+  note2Cell.alignment = { horizontal: 'center' };
+
+  // Enlace de regreso
+  row += 3;
   sheet.getCell(`B${row}`).value = {
     text: '← Volver al Dashboard',
     hyperlink: '#Dashboard!A1'
@@ -450,7 +584,13 @@ async function createFacturaConsumidorFinalSheet(workbook) {
   // Datos de la factura
   sheet.getCell('B4').value = 'No. Factura:';
   sheet.getCell('B4').font = { bold: true };
-  sheet.getCell('C4').value = '';
+  sheet.getCell('C4').value = { formula: 'Correlativos!C7' };  // Lee el correlativo de Consumidor Final
+  sheet.getCell('C4').numFmt = '0';
+  sheet.getCell('C4').fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFCCFFCC' }  // Verde claro para indicar que es automático
+  };
   sheet.getCell('C4').border = { bottom: { style: 'thin' } };
 
   sheet.getCell('F4').value = 'Fecha:';
@@ -631,7 +771,13 @@ async function createFacturaCreditoFiscalSheet(workbook) {
   // Datos de la factura
   sheet.getCell('B4').value = 'No. Factura:';
   sheet.getCell('B4').font = { bold: true };
-  sheet.getCell('C4').value = '';
+  sheet.getCell('C4').value = { formula: 'Correlativos!C8' };  // Lee el correlativo de Crédito Fiscal
+  sheet.getCell('C4').numFmt = '0';
+  sheet.getCell('C4').fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFCCFFCC' }  // Verde claro
+  };
   sheet.getCell('C4').border = { bottom: { style: 'thin' } };
 
   sheet.getCell('F4').value = 'Fecha:';
@@ -844,7 +990,13 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
   // Datos de la factura
   sheet.getCell('B4').value = 'No. Factura:';
   sheet.getCell('B4').font = { bold: true };
-  sheet.getCell('C4').value = '';
+  sheet.getCell('C4').value = { formula: 'Correlativos!C9' };  // Lee el correlativo de Sujeto Excluido
+  sheet.getCell('C4').numFmt = '0';
+  sheet.getCell('C4').fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFCCFFCC' }  // Verde claro
+  };
   sheet.getCell('C4').border = { bottom: { style: 'thin' } };
 
   sheet.getCell('E4').value = 'Fecha:';
@@ -853,18 +1005,37 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
   sheet.getCell('F4').numFmt = 'dd/mm/yyyy';
   sheet.getCell('F4').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('B5').value = 'Cliente:';
-  sheet.getCell('B5').font = { bold: true };
-  sheet.mergeCells('C5:G5');
+  // Campo de cliente con dropdown opcional
+  sheet.getCell('B5').value = 'Código Cliente (opcional):';
+  sheet.getCell('B5').font = { bold: true, size: 10 };
   sheet.getCell('C5').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('B6').value = 'Documento:';
+  // Lista desplegable de clientes (opcional)
+  sheet.getCell('C5').dataValidation = {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Clientes!$A$2:$A$1000']
+  };
+
+  // VLOOKUP para nombre del cliente
+  sheet.getCell('B6').value = 'Cliente:';
   sheet.getCell('B6').font = { bold: true };
-  sheet.getCell('C6').value = '';
+  sheet.mergeCells('C6:G6');
+  sheet.getCell('C6').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,6,FALSE),""))'
+  };
   sheet.getCell('C6').border = { bottom: { style: 'thin' } };
 
+  // Documento
+  sheet.getCell('B7').value = 'Documento:';
+  sheet.getCell('B7').font = { bold: true };
+  sheet.getCell('C7').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,3,FALSE),""))'
+  };
+  sheet.getCell('C7').border = { bottom: { style: 'thin' } };
+
   // Tabla de productos
-  const headerRow = 8;
+  const headerRow = 9;
   const headers = ['#', 'Código Producto', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total'];
   let col = 'B';
   headers.forEach(header => {
@@ -880,8 +1051,8 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
   });
 
   // Filas para productos
-  for (let i = 9; i <= 28; i++) {
-    sheet.getCell(`B${i}`).value = i - 8;
+  for (let i = 10; i <= 29; i++) {
+    sheet.getCell(`B${i}`).value = i - 9;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
     // Lista desplegable de productos - columna C
@@ -912,18 +1083,18 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
     sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
   }
 
-  // Ejemplo pre-llenado en la primera fila (fila 9)
-  sheet.getCell('C9').value = 'PROD-003';  // Producto exento de ejemplo
-  sheet.getCell('E9').value = 5;  // Cantidad de ejemplo
+  // Ejemplo pre-llenado en la primera fila (fila 10)
+  sheet.getCell('C10').value = 'PROD-003';  // Producto exento de ejemplo
+  sheet.getCell('E10').value = 5;  // Cantidad de ejemplo
 
   // Totales
-  const totRow = 30;
+  const totRow = 31;
   sheet.mergeCells(`B${totRow}:F${totRow}`);
   sheet.getCell(`B${totRow}`).value = 'TOTAL A PAGAR:';
   sheet.getCell(`B${totRow}`).font = { bold: true, size: 12 };
   sheet.getCell(`B${totRow}`).alignment = { horizontal: 'right' };
 
-  sheet.getCell(`G${totRow}`).value = { formula: `SUMIF(G9:G28,"<>",G9:G28)` };
+  sheet.getCell(`G${totRow}`).value = { formula: `SUMIF(G10:G29,"<>",G10:G29)` };
   sheet.getCell(`G${totRow}`).numFmt = '$#,##0.00';
   sheet.getCell(`G${totRow}`).font = { bold: true, size: 12 };
   sheet.getCell(`G${totRow}`).fill = {
