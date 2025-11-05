@@ -470,23 +470,59 @@ async function createClientesSheet(workbook) {
     };
   }
 
-  // Ejemplo de cliente
-  sheet.addRow({
-    codigo: 'CLI-001',
-    tipoDoc: 'NIT - Número de Identificación Tributaria',
-    numDoc: '',
-    nit: '0614-123456-123-4',
-    nrc: '12345-6',
-    nombre: 'Empresa Ejemplo S.A. de C.V.',
-    nombreComercial: 'Ejemplo',
-    actividadEconomica: 'Comercio al por Mayor',
-    direccion: 'Col. Escalón, San Salvador',
-    departamento: 'San Salvador',
-    municipio: 'San Salvador',
-    telefono: '2222-2222',
-    correo: 'info@ejemplo.com',
-    granContribuyente: 'No'
-  });
+  // Ejemplos de clientes
+  const ejemplosClientes = [
+    {
+      codigo: 'CLI-001',
+      tipoDoc: 'NIT - Número de Identificación Tributaria',
+      numDoc: '',
+      nit: '0614-123456-123-4',
+      nrc: '12345-6',
+      nombre: 'Empresa Ejemplo S.A. de C.V.',
+      nombreComercial: 'Ejemplo',
+      actividadEconomica: 'Comercio al por Mayor',
+      direccion: 'Col. Escalón, San Salvador',
+      departamento: 'San Salvador',
+      municipio: 'San Salvador',
+      telefono: '2222-2222',
+      correo: 'info@ejemplo.com',
+      granContribuyente: 'No'
+    },
+    {
+      codigo: 'CLI-002',
+      tipoDoc: 'NIT - Número de Identificación Tributaria',
+      numDoc: '',
+      nit: '0614-987654-321-8',
+      nrc: '98765-4',
+      nombre: 'Corporación ABC S.A. de C.V.',
+      nombreComercial: 'ABC Corp',
+      actividadEconomica: 'Servicios Profesionales',
+      direccion: 'Col. San Benito, San Salvador',
+      departamento: 'San Salvador',
+      municipio: 'San Salvador',
+      telefono: '2333-3333',
+      correo: 'contacto@abc.com',
+      granContribuyente: 'Sí'
+    },
+    {
+      codigo: 'CLI-003',
+      tipoDoc: 'DUI - Documento Único de Identidad',
+      numDoc: '01234567-8',
+      nit: '0614-010180-101-0',
+      nrc: '',
+      nombre: 'Juan Carlos Pérez López',
+      nombreComercial: 'Ferretería El Tornillo',
+      actividadEconomica: 'Comercio al por Menor',
+      direccion: 'Santa Ana',
+      departamento: 'Santa Ana',
+      municipio: 'Santa Ana',
+      telefono: '2440-1234',
+      correo: 'jperez@email.com',
+      granContribuyente: 'No'
+    }
+  ];
+
+  ejemplosClientes.forEach(cliente => sheet.addRow(cliente));
 
   // Enlace de regreso
   const lastRow = sheet.rowCount + 2;
@@ -526,14 +562,18 @@ async function createProductosSheet(workbook) {
   }
 
   // Ejemplos de productos
-  const ejemplos = [
+  const ejemplosProductos = [
     { codigo: 'PROD-001', descripcion: 'Laptop Dell Latitude 7420', tipo: 'Gravado (13% IVA)', precio: 850.00, unidad: 'Unidad' },
     { codigo: 'PROD-002', descripcion: 'Medicamento Paracetamol 500mg', tipo: 'Exento (0% IVA)', precio: 2.50, unidad: 'Caja' },
     { codigo: 'PROD-003', descripcion: 'Libro de Contabilidad', tipo: 'Exento (0% IVA)', precio: 15.00, unidad: 'Unidad' },
-    { codigo: 'SERV-001', descripcion: 'Consultoría Técnica', tipo: 'Gravado (13% IVA)', precio: 100.00, unidad: 'Hora' }
+    { codigo: 'PROD-004', descripcion: 'Mouse Inalámbrico Logitech', tipo: 'Gravado (13% IVA)', precio: 25.00, unidad: 'Unidad' },
+    { codigo: 'PROD-005', descripcion: 'Escritorio de Oficina 1.20m', tipo: 'Gravado (13% IVA)', precio: 150.00, unidad: 'Unidad' },
+    { codigo: 'PROD-006', descripcion: 'Resma de Papel Carta', tipo: 'Gravado (13% IVA)', precio: 4.50, unidad: 'Resma' },
+    { codigo: 'SERV-001', descripcion: 'Consultoría Técnica', tipo: 'Gravado (13% IVA)', precio: 100.00, unidad: 'Hora' },
+    { codigo: 'SERV-002', descripcion: 'Capacitación Empresarial', tipo: 'Gravado (13% IVA)', precio: 250.00, unidad: 'Sesión' }
   ];
 
-  ejemplos.forEach(prod => sheet.addRow(prod));
+  ejemplosProductos.forEach(prod => sheet.addRow(prod));
 
   // Formato de moneda
   for (let i = 2; i <= 1000; i++) {
@@ -666,9 +706,9 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     };
     sheet.getCell(`H${i}`).numFmt = '$#,##0.00';
 
-    // Fórmula protegida para Total (Subtotal + IVA) - columna I
+    // Fórmula protegida para Total (En Consumidor Final = Subtotal, el IVA es solo informativo) - columna I
     sheet.getCell(`I${i}`).value = {
-      formula: `IF(ISNUMBER(G${i}),G${i}+H${i},"")`
+      formula: `IF(ISNUMBER(G${i}),G${i},"")`
     };
     sheet.getCell(`I${i}`).numFmt = '$#,##0.00';
   }
@@ -713,7 +753,7 @@ async function createFacturaConsumidorFinalSheet(workbook) {
 
   // Instrucciones
   sheet.mergeCells(`B${totRow + 2}:I${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Haga clic en "Código Producto" y seleccione de la lista desplegable (▼). Primero registre productos en la hoja "Productos"';
+  sheet.getCell(`B${totRow + 2}`).value = '⚠️ CÓMO USAR: 1) Vaya a hoja "Productos" y registre sus productos con códigos como PROD-001, PROD-002, etc. 2) Regrese aquí y haga clic en columna "Código Producto"';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
   sheet.getCell(`B${totRow + 2}`).fill = {
@@ -723,7 +763,7 @@ async function createFacturaConsumidorFinalSheet(workbook) {
   };
 
   sheet.mergeCells(`B${totRow + 3}:I${totRow + 3}`);
-  sheet.getCell(`B${totRow + 3}`).value = '📝 Ejemplo: Fila 1 muestra código "PROD-001" ya seleccionado. Descripción y precio se autocompletaron. Solo ingrese cantidad.';
+  sheet.getCell(`B${totRow + 3}`).value = '✅ EJEMPLO: Fila 1 ya tiene "PROD-001" seleccionado (producto de ejemplo). Descripción y precio se auto-completaron. Solo ingrese cantidad. Puede escribir el código directamente o seleccionar de la lista (▼).';
   sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
@@ -935,7 +975,7 @@ async function createFacturaCreditoFiscalSheet(workbook) {
 
   // Instrucciones
   sheet.mergeCells(`B${totRow + 2}:J${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Seleccione Código Cliente y Código Producto de las listas desplegables (▼). Registre clientes/productos en sus hojas primero.';
+  sheet.getCell(`B${totRow + 2}`).value = '⚠️ CÓMO USAR: 1) Registre clientes en hoja "Clientes" (CLI-001, CLI-002...) y productos en "Productos" (PROD-001...). 2) Haga clic en "Código Cliente" o "Código Producto" y seleccione/escriba el código.';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
   sheet.getCell(`B${totRow + 2}`).fill = {
@@ -945,7 +985,7 @@ async function createFacturaCreditoFiscalSheet(workbook) {
   };
 
   sheet.mergeCells(`B${totRow + 3}:J${totRow + 3}`);
-  sheet.getCell(`B${totRow + 3}`).value = '📝 Ejemplo: Fila 1 con cliente CLI-001 y producto PROD-001. Retención 1% se calcula automáticamente si cliente es Gran Contribuyente.';
+  sheet.getCell(`B${totRow + 3}`).value = '✅ EJEMPLO: Fila 1 ya tiene CLI-001 (cliente) y PROD-001 (producto). Datos se auto-completaron. Retención 1% se calcula si cliente es Gran Contribuyente. Solo ingrese cantidad.';
   sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
@@ -1105,7 +1145,7 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
 
   // Nota
   sheet.mergeCells(`B${totRow + 2}:G${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Seleccione Código Producto de la lista desplegable (▼). Registre productos en la hoja "Productos" primero.';
+  sheet.getCell(`B${totRow + 2}`).value = '⚠️ CÓMO USAR: 1) Registre clientes en "Clientes" (CLI-001...) y productos en "Productos" (PROD-001...). 2) Haga clic en "Código Cliente" o "Código Producto" y escriba/seleccione el código.';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
   sheet.getCell(`B${totRow + 2}`).fill = {
@@ -1115,7 +1155,7 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
   };
 
   sheet.mergeCells(`B${totRow + 3}:G${totRow + 3}`);
-  sheet.getCell(`B${totRow + 3}`).value = '📝 Esta factura NO incluye IVA (sujeto excluido). Ejemplo en fila 1: producto PROD-003 ya seleccionado.';
+  sheet.getCell(`B${totRow + 3}`).value = '✅ EJEMPLO: Fila 1 ya tiene PROD-003 seleccionado. Descripción y precio se auto-completaron. Esta factura NO incluye IVA (sujeto excluido). Solo ingrese cantidad.';
   sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
