@@ -459,11 +459,14 @@ async function createFacturaConsumidorFinalSheet(workbook) {
   sheet.getCell('G4').numFmt = 'dd/mm/yyyy';
   sheet.getCell('G4').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('B5').value = 'Cliente:';
-  sheet.getCell('B5').font = { bold: true };
+  sheet.getCell('B5').value = 'Cliente (opcional):';
+  sheet.getCell('B5').font = { bold: true, size: 10 };
   sheet.mergeCells('C5:I5');
-  sheet.getCell('C5').value = 'CONSUMIDOR FINAL';
+  sheet.getCell('C5').value = '';
   sheet.getCell('C5').border = { bottom: { style: 'thin' } };
+  sheet.getCell('C5').note = {
+    texts: [{ text: 'Puede dejar "CONSUMIDOR FINAL" o ingresar nombre del cliente' }]
+  };
 
   // Tabla de productos
   const headerRow = 7;
@@ -530,6 +533,10 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     sheet.getCell(`I${i}`).numFmt = '$#,##0.00';
   }
 
+  // Ejemplo pre-llenado en la primera fila (fila 8)
+  sheet.getCell('C8').value = 'PROD-001';  // Esto activará el VLOOKUP
+  sheet.getCell('E8').value = 2;  // Cantidad de ejemplo
+
   // Totales
   const totRow = 29;
   sheet.mergeCells(`B${totRow}:F${totRow}`);
@@ -566,12 +573,22 @@ async function createFacturaConsumidorFinalSheet(workbook) {
 
   // Instrucciones
   sheet.mergeCells(`B${totRow + 2}:I${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del producto. Descripción y precio se llenan automáticamente. Ingrese la cantidad deseada.';
-  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Haga clic en "Código Producto" y seleccione de la lista desplegable (▼). Primero registre productos en la hoja "Productos"';
+  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
+  sheet.getCell(`B${totRow + 2}`).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFEB9C' }
+  };
+
+  sheet.mergeCells(`B${totRow + 3}:I${totRow + 3}`);
+  sheet.getCell(`B${totRow + 3}`).value = '📝 Ejemplo: Fila 1 muestra código "PROD-001" ya seleccionado. Descripción y precio se autocompletaron. Solo ingrese cantidad.';
+  sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
   // Enlace de regreso
-  sheet.getCell(`B${totRow + 4}`).value = {
+  sheet.getCell(`B${totRow + 5}`).value = {
     text: '← Volver al Dashboard',
     hyperlink: '#Dashboard!A1'
   };
@@ -739,6 +756,11 @@ async function createFacturaCreditoFiscalSheet(workbook) {
     sheet.getCell(`J${i}`).numFmt = '$#,##0.00';
   }
 
+  // Ejemplo pre-llenado en la primera fila (fila 10)
+  sheet.getCell('C5').value = 'CLI-001';  // Código de cliente de ejemplo
+  sheet.getCell('C10').value = 'PROD-001';  // Código de producto
+  sheet.getCell('E10').value = 3;  // Cantidad de ejemplo
+
   // Totales
   const totRow = 31;
   sheet.mergeCells(`B${totRow}:F${totRow}`);
@@ -767,16 +789,26 @@ async function createFacturaCreditoFiscalSheet(workbook) {
 
   // Instrucciones
   sheet.mergeCells(`B${totRow + 2}:J${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del cliente y productos. Ingrese la cantidad. La retención se calcula solo para grandes contribuyentes.';
-  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Seleccione Código Cliente y Código Producto de las listas desplegables (▼). Registre clientes/productos en sus hojas primero.';
+  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
+  sheet.getCell(`B${totRow + 2}`).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFEB9C' }
+  };
+
+  sheet.mergeCells(`B${totRow + 3}:J${totRow + 3}`);
+  sheet.getCell(`B${totRow + 3}`).value = '📝 Ejemplo: Fila 1 con cliente CLI-001 y producto PROD-001. Retención 1% se calcula automáticamente si cliente es Gran Contribuyente.';
+  sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
   // Enlace de regreso
-  sheet.getCell(`B${totRow + 4}`).value = {
+  sheet.getCell(`B${totRow + 5}`).value = {
     text: '← Volver al Dashboard',
     hyperlink: '#Dashboard!A1'
   };
-  sheet.getCell(`B${totRow + 4}`).font = { color: { argb: 'FF0563C1' }, underline: true };
+  sheet.getCell(`B${totRow + 5}`).font = { color: { argb: 'FF0563C1' }, underline: true };
 }
 
 // ============================================================================
@@ -880,6 +912,10 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
     sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
   }
 
+  // Ejemplo pre-llenado en la primera fila (fila 9)
+  sheet.getCell('C9').value = 'PROD-003';  // Producto exento de ejemplo
+  sheet.getCell('E9').value = 5;  // Cantidad de ejemplo
+
   // Totales
   const totRow = 30;
   sheet.mergeCells(`B${totRow}:F${totRow}`);
@@ -898,16 +934,26 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
 
   // Nota
   sheet.mergeCells(`B${totRow + 2}:G${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del producto. Ingrese la cantidad. Esta factura NO incluye IVA (sujeto excluido)';
-  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 2}`).value = '💡 IMPORTANTE: Seleccione Código Producto de la lista desplegable (▼). Registre productos en la hoja "Productos" primero.';
+  sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9, bold: true, color: { argb: 'FFFF0000' } };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
+  sheet.getCell(`B${totRow + 2}`).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFEB9C' }
+  };
+
+  sheet.mergeCells(`B${totRow + 3}:G${totRow + 3}`);
+  sheet.getCell(`B${totRow + 3}`).value = '📝 Esta factura NO incluye IVA (sujeto excluido). Ejemplo en fila 1: producto PROD-003 ya seleccionado.';
+  sheet.getCell(`B${totRow + 3}`).font = { italic: true, size: 9 };
+  sheet.getCell(`B${totRow + 3}`).alignment = { horizontal: 'center' };
 
   // Enlace de regreso
-  sheet.getCell(`B${totRow + 4}`).value = {
+  sheet.getCell(`B${totRow + 5}`).value = {
     text: '← Volver al Dashboard',
     hyperlink: '#Dashboard!A1'
   };
-  sheet.getCell(`B${totRow + 4}`).font = { color: { argb: 'FF0563C1' }, underline: true };
+  sheet.getCell(`B${totRow + 5}`).font = { color: { argb: 'FF0563C1' }, underline: true };
 }
 
 // ============================================================================
