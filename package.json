@@ -1,0 +1,23 @@
+{
+  "name": "facturaexcel",
+  "version": "1.0.0",
+  "description": "Generador de Excel para facturación electrónica de El Salvador",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:27536/git/JGuardadoSV/FacturaExcel"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0"
+  }
+}

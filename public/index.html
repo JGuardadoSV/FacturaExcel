@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Excel - Facturación Electrónica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        label .required {
+            color: #e74c3c;
+            margin-left: 3px;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .info-box p {
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">📊</div>
+            <h1>Generador de Excel</h1>
+            <p>Sistema de Facturación Electrónica - El Salvador</p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>¿Qué obtendrás?</strong></p>
+            <p>Un archivo Excel pre-configurado con todas las hojas necesarias para gestionar tu facturación:</p>
+            <p>✅ Dashboard de navegación | ✅ Catálogos (Departamentos, Municipios, Actividades)</p>
+            <p>✅ Gestión de Clientes y Productos | ✅ Hojas de facturación (CF, CCF, FSE)</p>
+            <p>✅ Notas de Crédito | ✅ Registro de facturas | ✅ Control de anulaciones</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <form id="emisorForm">
+            <div class="form-section">
+                <h2>📋 Información del Emisor</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="razonSocial">Razón Social <span class="required">*</span></label>
+                        <input type="text" id="razonSocial" name="razonSocial" required
+                               placeholder="Ej: Empresa S.A. de C.V.">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombreComercial">Nombre Comercial</label>
+                        <input type="text" id="nombreComercial" name="nombreComercial"
+                               placeholder="Nombre con el que opera el negocio">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>🔢 Datos Tributarios</h2>
+                <div class="form-grid form-grid-2">
+                    <div class="form-group">
+                        <label for="nit">NIT <span class="required">*</span></label>
+                        <input type="text" id="nit" name="nit" required
+                               placeholder="0000-000000-000-0" maxlength="17">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nrc">NRC</label>
+                        <input type="text" id="nrc" name="nrc"
+                               placeholder="000000-0" maxlength="8">
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="actividadEconomica">Actividad Económica <span class="required">*</span></label>
+                        <input type="text" id="actividadEconomica" name="actividadEconomica" required
+                               placeholder="Ej: Comercio al por Mayor, Servicios de Consultoría, etc.">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>📍 Ubicación</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="direccion">Dirección Completa</label>
+                        <textarea id="direccion" name="direccion"
+                                  placeholder="Calle, colonia, número de casa/local"></textarea>
+                    </div>
+
+                    <div class="form-grid form-grid-2">
+                        <div class="form-group">
+                            <label for="departamento">Departamento</label>
+                            <select id="departamento" name="departamento">
+                                <option value="">Seleccione...</option>
+                                <option value="Ahuachapán">Ahuachapán</option>
+                                <option value="Santa Ana">Santa Ana</option>
+                                <option value="Sonsonate">Sonsonate</option>
+                                <option value="Chalatenango">Chalatenango</option>
+                                <option value="La Libertad">La Libertad</option>
+                                <option value="San Salvador">San Salvador</option>
+                                <option value="Cuscatlán">Cuscatlán</option>
+                                <option value="La Paz">La Paz</option>
+                                <option value="Cabañas">Cabañas</option>
+                                <option value="San Vicente">San Vicente</option>
+                                <option value="Usulután">Usulután</option>
+                                <option value="San Miguel">San Miguel</option>
+                                <option value="Morazán">Morazán</option>
+                                <option value="La Unión">La Unión</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="municipio">Municipio</label>
+                            <input type="text" id="municipio" name="municipio"
+                                   placeholder="Nombre del municipio">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>📞 Contacto</h2>
+                <div class="form-grid form-grid-2">
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono"
+                               placeholder="0000-0000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="correo">Correo Electrónico</label>
+                        <input type="email" id="correo" name="correo"
+                               placeholder="ejemplo@correo.com">
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button type="submit" class="btn" id="submitBtn">
+                    📥 Generar y Descargar Excel
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generando su archivo Excel personalizado...</p>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">Por favor espere, esto puede tomar unos segundos</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('emisorForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const alertBox = document.getElementById('alert');
+
+        // Formatear NIT automáticamente
+        document.getElementById('nit').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, '');
+            if (value.length > 4) {
+                value = value.slice(0, 4) + '-' + value.slice(4);
+            }
+            if (value.length > 11) {
+                value = value.slice(0, 11) + '-' + value.slice(11);
+            }
+            if (value.length > 15) {
+                value = value.slice(0, 15) + '-' + value.slice(15, 16);
+            }
+            e.target.value = value;
+        });
+
+        // Formatear NRC automáticamente
+        document.getElementById('nrc').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, '');
+            if (value.length > 6) {
+                value = value.slice(0, 6) + '-' + value.slice(6, 7);
+            }
+            e.target.value = value;
+        });
+
+        function showAlert(message, type) {
+            alertBox.textContent = message;
+            alertBox.className = `alert ${type} active`;
+            setTimeout(() => {
+                alertBox.className = 'alert';
+            }, 5000);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Recopilar datos del formulario
+            const formData = new FormData(form);
+            const emisorData = Object.fromEntries(formData.entries());
+
+            // Validar campos requeridos
+            if (!emisorData.razonSocial || !emisorData.nit || !emisorData.actividadEconomica) {
+                showAlert('Por favor complete todos los campos obligatorios marcados con *', 'alert-error');
+                return;
+            }
+
+            // Mostrar loading
+            submitBtn.disabled = true;
+            loading.classList.add('active');
+            alertBox.className = 'alert';
+
+            try {
+                const response = await fetch('/api/generar-excel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(emisorData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.mensaje || 'Error al generar el archivo');
+                }
+
+                // Descargar el archivo
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Facturacion_${emisorData.razonSocial.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showAlert('✅ ¡Excel generado exitosamente! El archivo se ha descargado.', 'alert-success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('❌ Error: ' + error.message, 'alert-error');
+            } finally {
+                submitBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
