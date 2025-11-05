@@ -424,18 +424,18 @@ async function createFacturaConsumidorFinalSheet(workbook) {
   });
 
   sheet.columns = [
-    { width: 5 },
-    { width: 12 },
-    { width: 35 },
-    { width: 12 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 }
+    { width: 5 },   // #
+    { width: 15 },  // Código producto
+    { width: 35 },  // Descripción
+    { width: 10 },  // Cantidad
+    { width: 15 },  // Precio
+    { width: 15 },  // Subtotal
+    { width: 15 },  // IVA
+    { width: 15 }   // Total
   ];
 
   // Título
-  sheet.mergeCells('B2:H2');
+  sheet.mergeCells('B2:I2');
   const titleCell = sheet.getCell('B2');
   titleCell.value = 'FACTURA - CONSUMIDOR FINAL';
   titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -461,13 +461,13 @@ async function createFacturaConsumidorFinalSheet(workbook) {
 
   sheet.getCell('B5').value = 'Cliente:';
   sheet.getCell('B5').font = { bold: true };
-  sheet.mergeCells('C5:H5');
+  sheet.mergeCells('C5:I5');
   sheet.getCell('C5').value = 'CONSUMIDOR FINAL';
   sheet.getCell('C5').border = { bottom: { style: 'thin' } };
 
   // Tabla de productos
   const headerRow = 7;
-  const headers = ['#', 'Código', 'Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal', 'IVA', 'Total'];
+  const headers = ['#', 'Código Producto', 'Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal', 'IVA 13%', 'Total'];
   let col = 'B';
   headers.forEach(header => {
     sheet.getCell(`${col}${headerRow}`).value = header;
@@ -486,37 +486,58 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     sheet.getCell(`B${i}`).value = i - 7;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    // Fórmulas
-    sheet.getCell(`F${i}`).value = { formula: `D${i}*E${i}` };
+    // Lista desplegable de productos en columna C (Código Producto)
+    sheet.getCell(`C${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['Productos!$A$2:$A$1000'],
+      showErrorMessage: true,
+      errorTitle: 'Código inválido',
+      error: 'Seleccione un código de la lista de productos'
+    };
+
+    // VLOOKUP para descripción (columna D)
+    sheet.getCell(`D${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
+    };
+
+    // Columna E = Cantidad (INPUT MANUAL del usuario, sin fórmula)
+    // Solo formato numérico
+    sheet.getCell(`E${i}`).numFmt = '0';
+
+    // VLOOKUP para precio unitario (columna F)
+    sheet.getCell(`F${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,4,FALSE),""))`
+    };
     sheet.getCell(`F${i}`).numFmt = '$#,##0.00';
 
-    sheet.getCell(`G${i}`).value = { formula: `F${i}*0.13` };
+    // Fórmula protegida para Subtotal (Cantidad * Precio) - columna G
+    sheet.getCell(`G${i}`).value = {
+      formula: `IF(AND(ISNUMBER(E${i}),ISNUMBER(F${i})),E${i}*F${i},"")`
+    };
     sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
 
-    sheet.getCell(`H${i}`).value = { formula: `F${i}+G${i}` };
+    // Fórmula protegida para IVA (Subtotal * 13%) - columna H
+    sheet.getCell(`H${i}`).value = {
+      formula: `IF(ISNUMBER(G${i}),G${i}*0.13,"")`
+    };
     sheet.getCell(`H${i}`).numFmt = '$#,##0.00';
 
-    // Formato de moneda
-    sheet.getCell(`E${i}`).numFmt = '$#,##0.00';
+    // Fórmula protegida para Total (Subtotal + IVA) - columna I
+    sheet.getCell(`I${i}`).value = {
+      formula: `IF(ISNUMBER(G${i}),G${i}+H${i},"")`
+    };
+    sheet.getCell(`I${i}`).numFmt = '$#,##0.00';
   }
 
   // Totales
   const totRow = 29;
-  sheet.mergeCells(`B${totRow}:E${totRow}`);
+  sheet.mergeCells(`B${totRow}:F${totRow}`);
   sheet.getCell(`B${totRow}`).value = 'TOTALES:';
   sheet.getCell(`B${totRow}`).font = { bold: true, size: 12 };
   sheet.getCell(`B${totRow}`).alignment = { horizontal: 'right' };
 
-  sheet.getCell(`F${totRow}`).value = { formula: `SUM(F8:F27)` };
-  sheet.getCell(`F${totRow}`).numFmt = '$#,##0.00';
-  sheet.getCell(`F${totRow}`).font = { bold: true };
-  sheet.getCell(`F${totRow}`).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFD9E2F3' }
-  };
-
-  sheet.getCell(`G${totRow}`).value = { formula: `SUM(G8:G27)` };
+  sheet.getCell(`G${totRow}`).value = { formula: `SUMIF(G8:G27,"<>",G8:G27)` };
   sheet.getCell(`G${totRow}`).numFmt = '$#,##0.00';
   sheet.getCell(`G${totRow}`).font = { bold: true };
   sheet.getCell(`G${totRow}`).fill = {
@@ -525,18 +546,27 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     fgColor: { argb: 'FFD9E2F3' }
   };
 
-  sheet.getCell(`H${totRow}`).value = { formula: `SUM(H8:H27)` };
+  sheet.getCell(`H${totRow}`).value = { formula: `SUMIF(H8:H27,"<>",H8:H27)` };
   sheet.getCell(`H${totRow}`).numFmt = '$#,##0.00';
-  sheet.getCell(`H${totRow}`).font = { bold: true, size: 12 };
+  sheet.getCell(`H${totRow}`).font = { bold: true };
   sheet.getCell(`H${totRow}`).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFD9E2F3' }
+  };
+
+  sheet.getCell(`I${totRow}`).value = { formula: `SUMIF(I8:I27,"<>",I8:I27)` };
+  sheet.getCell(`I${totRow}`).numFmt = '$#,##0.00';
+  sheet.getCell(`I${totRow}`).font = { bold: true, size: 12 };
+  sheet.getCell(`I${totRow}`).fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FF92D050' }
   };
 
   // Instrucciones
-  sheet.mergeCells(`B${totRow + 2}:H${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Complete el código y descripción del producto. Las cantidades y precios calcularán automáticamente.';
+  sheet.mergeCells(`B${totRow + 2}:I${totRow + 2}`);
+  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del producto. Descripción y precio se llenan automáticamente. Ingrese la cantidad deseada.';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
 
@@ -557,19 +587,19 @@ async function createFacturaCreditoFiscalSheet(workbook) {
   });
 
   sheet.columns = [
-    { width: 5 },
-    { width: 12 },
-    { width: 35 },
-    { width: 12 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 }
+    { width: 5 },   // #
+    { width: 15 },  // Código producto
+    { width: 35 },  // Descripción
+    { width: 10 },  // Cantidad
+    { width: 15 },  // Precio
+    { width: 15 },  // Subtotal
+    { width: 15 },  // IVA
+    { width: 15 },  // Retención
+    { width: 15 }   // Total
   ];
 
   // Título
-  sheet.mergeCells('B2:I2');
+  sheet.mergeCells('B2:J2');
   const titleCell = sheet.getCell('B2');
   titleCell.value = 'FACTURA - CRÉDITO FISCAL (CCF)';
   titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -593,34 +623,61 @@ async function createFacturaCreditoFiscalSheet(workbook) {
   sheet.getCell('G4').numFmt = 'dd/mm/yyyy';
   sheet.getCell('G4').border = { bottom: { style: 'thin' } };
 
-  // Datos del cliente
-  sheet.getCell('B5').value = 'Cliente:';
+  // Datos del cliente CON LISTA DESPLEGABLE
+  sheet.getCell('B5').value = 'Código Cliente:';
   sheet.getCell('B5').font = { bold: true };
-  sheet.mergeCells('C5:H5');
   sheet.getCell('C5').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('B6').value = 'NIT:';
+  // Lista desplegable de clientes
+  sheet.getCell('C5').dataValidation = {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Clientes!$A$2:$A$1000'],
+    showErrorMessage: true,
+    errorTitle: 'Código inválido',
+    error: 'Seleccione un código de cliente válido'
+  };
+
+  // VLOOKUP para nombre del cliente
+  sheet.getCell('B6').value = 'Cliente:';
   sheet.getCell('B6').font = { bold: true };
-  sheet.getCell('C6').value = '';
+  sheet.mergeCells('C6:I6');
+  sheet.getCell('C6').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,6,FALSE),""))'
+  };
   sheet.getCell('C6').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('E6').value = 'NRC:';
-  sheet.getCell('E6').font = { bold: true };
-  sheet.getCell('F6').value = '';
-  sheet.getCell('F6').border = { bottom: { style: 'thin' } };
+  // VLOOKUP para NIT
+  sheet.getCell('B7').value = 'NIT:';
+  sheet.getCell('B7').font = { bold: true };
+  sheet.getCell('C7').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,4,FALSE),""))'
+  };
+  sheet.getCell('C7').border = { bottom: { style: 'thin' } };
 
-  sheet.getCell('G6').value = 'Gran Contribuyente:';
-  sheet.getCell('G6').font = { bold: true, size: 9 };
-  sheet.getCell('I6').value = '';
-  sheet.getCell('I6').border = { bottom: { style: 'thin' } };
+  // VLOOKUP para NRC
+  sheet.getCell('E7').value = 'NRC:';
+  sheet.getCell('E7').font = { bold: true };
+  sheet.getCell('F7').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,5,FALSE),""))'
+  };
+  sheet.getCell('F7').border = { bottom: { style: 'thin' } };
+
+  // VLOOKUP para Gran Contribuyente
+  sheet.getCell('H7').value = 'Gran Contribuyente:';
+  sheet.getCell('H7').font = { bold: true, size: 9 };
+  sheet.getCell('J7').value = {
+    formula: 'IF(C5="","",IFERROR(VLOOKUP(C5,Clientes!$A$2:$N$1000,14,FALSE),""))'
+  };
+  sheet.getCell('J7').border = { bottom: { style: 'thin' } };
 
   // Tabla de productos
-  const headerRow = 8;
-  const headers = ['#', 'Código', 'Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal', 'IVA', 'Retención 1%', 'Total'];
+  const headerRow = 9;
+  const headers = ['#', 'Código Producto', 'Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal', 'IVA 13%', 'Retención 1%', 'Total'];
   let col = 'B';
   headers.forEach(header => {
     sheet.getCell(`${col}${headerRow}`).value = header;
-    sheet.getCell(`${col}${headerRow}`).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sheet.getCell(`${col}${headerRow}`).font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
     sheet.getCell(`${col}${headerRow}`).fill = {
       type: 'pattern',
       pattern: 'solid',
@@ -631,40 +688,68 @@ async function createFacturaCreditoFiscalSheet(workbook) {
   });
   sheet.getRow(headerRow).height = 30;
 
-  // Filas para productos (9-28 = 20 líneas)
-  for (let i = 9; i <= 28; i++) {
-    sheet.getCell(`B${i}`).value = i - 8;
+  // Filas para productos (10-29 = 20 líneas)
+  for (let i = 10; i <= 29; i++) {
+    sheet.getCell(`B${i}`).value = i - 9;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    // Fórmulas
-    sheet.getCell(`F${i}`).value = { formula: `D${i}*E${i}` };
+    // Lista desplegable de productos - columna C
+    sheet.getCell(`C${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['Productos!$A$2:$A$1000']
+    };
+
+    // VLOOKUP para descripción - columna D
+    sheet.getCell(`D${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
+    };
+
+    // Columna E = Cantidad (INPUT MANUAL)
+    sheet.getCell(`E${i}`).numFmt = '0';
+
+    // VLOOKUP para precio - columna F
+    sheet.getCell(`F${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,4,FALSE),""))`
+    };
     sheet.getCell(`F${i}`).numFmt = '$#,##0.00';
 
-    sheet.getCell(`G${i}`).value = { formula: `F${i}*0.13` };
+    // Fórmula protegida para Subtotal - columna G (Cantidad*Precio = E*F)
+    sheet.getCell(`G${i}`).value = {
+      formula: `IF(AND(ISNUMBER(E${i}),ISNUMBER(F${i})),E${i}*F${i},"")`
+    };
     sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
 
-    // Retención 1% si es gran contribuyente (verificar celda I6)
-    sheet.getCell(`H${i}`).value = { formula: `IF(UPPER($I$6)="SÍ",G${i}*0.01,0)` };
+    // Fórmula protegida para IVA - columna H
+    sheet.getCell(`H${i}`).value = {
+      formula: `IF(ISNUMBER(G${i}),G${i}*0.13,"")`
+    };
     sheet.getCell(`H${i}`).numFmt = '$#,##0.00';
 
-    sheet.getCell(`I${i}`).value = { formula: `F${i}+G${i}-H${i}` };
+    // Retención 1% SOLO si es gran contribuyente (lee de J7) - columna I
+    sheet.getCell(`I${i}`).value = {
+      formula: `IF(AND(ISNUMBER(H${i}),UPPER($J$7)="SÍ"),H${i}*0.01,IF(ISNUMBER(H${i}),0,""))`
+    };
     sheet.getCell(`I${i}`).numFmt = '$#,##0.00';
 
-    // Formato de moneda
-    sheet.getCell(`E${i}`).numFmt = '$#,##0.00';
+    // Total protegido - columna J
+    sheet.getCell(`J${i}`).value = {
+      formula: `IF(ISNUMBER(G${i}),G${i}+H${i}-I${i},"")`
+    };
+    sheet.getCell(`J${i}`).numFmt = '$#,##0.00';
   }
 
   // Totales
-  const totRow = 30;
-  sheet.mergeCells(`B${totRow}:E${totRow}`);
+  const totRow = 31;
+  sheet.mergeCells(`B${totRow}:F${totRow}`);
   sheet.getCell(`B${totRow}`).value = 'TOTALES:';
   sheet.getCell(`B${totRow}`).font = { bold: true, size: 12 };
   sheet.getCell(`B${totRow}`).alignment = { horizontal: 'right' };
 
-  ['F', 'G', 'H', 'I'].forEach(col => {
-    const startRow = 9;
-    const endRow = 28;
-    sheet.getCell(`${col}${totRow}`).value = { formula: `SUM(${col}${startRow}:${col}${endRow})` };
+  ['G', 'H', 'I', 'J'].forEach(col => {
+    sheet.getCell(`${col}${totRow}`).value = {
+      formula: `SUMIF(${col}10:${col}29,"<>",${col}10:${col}29)`
+    };
     sheet.getCell(`${col}${totRow}`).numFmt = '$#,##0.00';
     sheet.getCell(`${col}${totRow}`).font = { bold: true };
     sheet.getCell(`${col}${totRow}`).fill = {
@@ -674,15 +759,15 @@ async function createFacturaCreditoFiscalSheet(workbook) {
     };
   });
 
-  sheet.getCell(`I${totRow}`).fill = {
+  sheet.getCell(`J${totRow}`).fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FF5B9BD5' }
   };
 
   // Instrucciones
-  sheet.mergeCells(`B${totRow + 2}:I${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Si el cliente es Gran Contribuyente, escriba "Sí" en la celda correspondiente para calcular retención del 1% sobre IVA';
+  sheet.mergeCells(`B${totRow + 2}:J${totRow + 2}`);
+  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del cliente y productos. Ingrese la cantidad. La retención se calcula solo para grandes contribuyentes.';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
 
@@ -703,16 +788,16 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
   });
 
   sheet.columns = [
-    { width: 5 },
-    { width: 12 },
-    { width: 35 },
-    { width: 12 },
-    { width: 15 },
-    { width: 15 }
+    { width: 5 },   // #
+    { width: 15 },  // Código producto
+    { width: 35 },  // Descripción
+    { width: 10 },  // Cantidad
+    { width: 15 },  // Precio
+    { width: 15 }   // Total
   ];
 
   // Título
-  sheet.mergeCells('B2:F2');
+  sheet.mergeCells('B2:G2');
   const titleCell = sheet.getCell('B2');
   titleCell.value = 'FACTURA - SUJETO EXCLUIDO (FSE)';
   titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -738,7 +823,7 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
 
   sheet.getCell('B5').value = 'Cliente:';
   sheet.getCell('B5').font = { bold: true };
-  sheet.mergeCells('C5:F5');
+  sheet.mergeCells('C5:G5');
   sheet.getCell('C5').border = { bottom: { style: 'thin' } };
 
   sheet.getCell('B6').value = 'Documento:';
@@ -748,7 +833,7 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
 
   // Tabla de productos
   const headerRow = 8;
-  const headers = ['#', 'Código', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total'];
+  const headers = ['#', 'Código Producto', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total'];
   let col = 'B';
   headers.forEach(header => {
     sheet.getCell(`${col}${headerRow}`).value = header;
@@ -767,31 +852,53 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
     sheet.getCell(`B${i}`).value = i - 8;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    sheet.getCell(`F${i}`).value = { formula: `D${i}*E${i}` };
+    // Lista desplegable de productos - columna C
+    sheet.getCell(`C${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['Productos!$A$2:$A$1000']
+    };
+
+    // VLOOKUP para descripción - columna D
+    sheet.getCell(`D${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
+    };
+
+    // Columna E = Cantidad (INPUT MANUAL)
+    sheet.getCell(`E${i}`).numFmt = '0';
+
+    // VLOOKUP para precio - columna F
+    sheet.getCell(`F${i}`).value = {
+      formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,4,FALSE),""))`
+    };
     sheet.getCell(`F${i}`).numFmt = '$#,##0.00';
 
-    sheet.getCell(`E${i}`).numFmt = '$#,##0.00';
+    // Total protegido - columna G (Cantidad * Precio = E * F)
+    sheet.getCell(`G${i}`).value = {
+      formula: `IF(AND(ISNUMBER(E${i}),ISNUMBER(F${i})),E${i}*F${i},"")`
+    };
+    sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
   }
 
   // Totales
   const totRow = 30;
-  sheet.mergeCells(`B${totRow}:E${totRow}`);
+  sheet.mergeCells(`B${totRow}:F${totRow}`);
   sheet.getCell(`B${totRow}`).value = 'TOTAL A PAGAR:';
   sheet.getCell(`B${totRow}`).font = { bold: true, size: 12 };
   sheet.getCell(`B${totRow}`).alignment = { horizontal: 'right' };
 
-  sheet.getCell(`F${totRow}`).value = { formula: `SUM(F9:F28)` };
-  sheet.getCell(`F${totRow}`).numFmt = '$#,##0.00';
-  sheet.getCell(`F${totRow}`).font = { bold: true, size: 12 };
-  sheet.getCell(`F${totRow}`).fill = {
+  sheet.getCell(`G${totRow}`).value = { formula: `SUMIF(G9:G28,"<>",G9:G28)` };
+  sheet.getCell(`G${totRow}`).numFmt = '$#,##0.00';
+  sheet.getCell(`G${totRow}`).font = { bold: true, size: 12 };
+  sheet.getCell(`G${totRow}`).fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FFC65911' }
   };
 
   // Nota
-  sheet.mergeCells(`B${totRow + 2}:F${totRow + 2}`);
-  sheet.getCell(`B${totRow + 2}`).value = '💡 Esta factura NO incluye IVA (sujeto excluido)';
+  sheet.mergeCells(`B${totRow + 2}:G${totRow + 2}`);
+  sheet.getCell(`B${totRow + 2}`).value = '💡 Seleccione el código del producto. Ingrese la cantidad. Esta factura NO incluye IVA (sujeto excluido)';
   sheet.getCell(`B${totRow + 2}`).font = { italic: true, size: 9 };
   sheet.getCell(`B${totRow + 2}`).alignment = { horizontal: 'center' };
 
@@ -906,18 +1013,18 @@ async function createRegistroFacturasSheet(workbook) {
 
   sheet.getCell(`L${totalRow + 1}`).value = 'Total Ventas:';
   sheet.getCell(`L${totalRow + 1}`).font = { bold: true };
-  sheet.getCell(`M${totalRow + 1}`).value = { formula: 'SUM(I:I)' };
+  sheet.getCell(`M${totalRow + 1}`).value = { formula: 'SUMIF(I:I,"<>",I:I)' };
   sheet.getCell(`M${totalRow + 1}`).numFmt = '$#,##0.00';
   sheet.getCell(`M${totalRow + 1}`).font = { bold: true };
 
   sheet.getCell(`L${totalRow + 2}`).value = 'Total IVA:';
   sheet.getCell(`L${totalRow + 2}`).font = { bold: true };
-  sheet.getCell(`M${totalRow + 2}`).value = { formula: 'SUM(G:G)' };
+  sheet.getCell(`M${totalRow + 2}`).value = { formula: 'SUMIF(G:G,"<>",G:G)' };
   sheet.getCell(`M${totalRow + 2}`).numFmt = '$#,##0.00';
 
   sheet.getCell(`L${totalRow + 3}`).value = 'Total Retención:';
   sheet.getCell(`L${totalRow + 3}`).font = { bold: true };
-  sheet.getCell(`M${totalRow + 3}`).value = { formula: 'SUM(H:H)' };
+  sheet.getCell(`M${totalRow + 3}`).value = { formula: 'SUMIF(H:H,"<>",H:H)' };
   sheet.getCell(`M${totalRow + 3}`).numFmt = '$#,##0.00';
 
   // Enlace de regreso
