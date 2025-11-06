@@ -669,16 +669,6 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     sheet.getCell(`B${i}`).value = i - 7;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    // Lista desplegable de productos en columna C (Código Producto)
-    sheet.getCell(`C${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: ['Productos!$A$2:$A$1000'],
-      showErrorMessage: true,
-      errorTitle: 'Código inválido',
-      error: 'Seleccione un código de la lista de productos'
-    };
-
     // VLOOKUP para descripción (columna D)
     sheet.getCell(`D${i}`).value = {
       formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
@@ -712,6 +702,16 @@ async function createFacturaConsumidorFinalSheet(workbook) {
     };
     sheet.getCell(`I${i}`).numFmt = '$#,##0.00';
   }
+
+  // Agregar validación de datos (dropdown) para TODO el rango de productos de una sola vez
+  sheet.dataValidations.add('C8:C27', {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Productos!$A$2:$A$1000'],
+    showErrorMessage: true,
+    errorTitle: 'Código inválido',
+    error: 'Seleccione un código de la lista de productos'
+  });
 
   // Ejemplo pre-llenado en la primera fila (fila 8)
   sheet.getCell('C8').value = 'PROD-001';  // Esto activará el VLOOKUP
@@ -896,13 +896,6 @@ async function createFacturaCreditoFiscalSheet(workbook) {
     sheet.getCell(`B${i}`).value = i - 9;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    // Lista desplegable de productos - columna C
-    sheet.getCell(`C${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: ['Productos!$A$2:$A$1000']
-    };
-
     // VLOOKUP para descripción - columna D
     sheet.getCell(`D${i}`).value = {
       formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
@@ -941,6 +934,26 @@ async function createFacturaCreditoFiscalSheet(workbook) {
     };
     sheet.getCell(`J${i}`).numFmt = '$#,##0.00';
   }
+
+  // Agregar validación de datos (dropdown) para clientes en C5
+  sheet.dataValidations.add('C5', {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Clientes!$A$2:$A$1000'],
+    showErrorMessage: true,
+    errorTitle: 'Código de cliente inválido',
+    error: 'Seleccione un código de cliente de la lista'
+  });
+
+  // Agregar validación de datos (dropdown) para productos en TODO el rango
+  sheet.dataValidations.add('C10:C29', {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Productos!$A$2:$A$1000'],
+    showErrorMessage: true,
+    errorTitle: 'Código de producto inválido',
+    error: 'Seleccione un código de producto de la lista'
+  });
 
   // Ejemplo pre-llenado en la primera fila (fila 10)
   sheet.getCell('C5').value = 'CLI-001';  // Código de cliente de ejemplo
@@ -1095,13 +1108,6 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
     sheet.getCell(`B${i}`).value = i - 9;
     sheet.getCell(`B${i}`).alignment = { horizontal: 'center' };
 
-    // Lista desplegable de productos - columna C
-    sheet.getCell(`C${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: ['Productos!$A$2:$A$1000']
-    };
-
     // VLOOKUP para descripción - columna D
     sheet.getCell(`D${i}`).value = {
       formula: `IF(C${i}="","",IFERROR(VLOOKUP(C${i},Productos!$A$2:$E$1000,2,FALSE),""))`
@@ -1122,6 +1128,16 @@ async function createFacturaSujetoExcluidoSheet(workbook) {
     };
     sheet.getCell(`G${i}`).numFmt = '$#,##0.00';
   }
+
+  // Agregar validación de datos (dropdown) para productos en TODO el rango
+  sheet.dataValidations.add('C10:C29', {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['Productos!$A$2:$A$1000'],
+    showErrorMessage: true,
+    errorTitle: 'Código de producto inválido',
+    error: 'Seleccione un código de producto de la lista'
+  });
 
   // Ejemplo pre-llenado en la primera fila (fila 10)
   sheet.getCell('C10').value = 'PROD-003';  // Producto exento de ejemplo
