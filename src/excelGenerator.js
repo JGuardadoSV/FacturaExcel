@@ -442,35 +442,7 @@ async function createClientesSheet(workbook) {
 
   styleHeaderRow(sheet.getRow(1));
 
-  // Agregar validaciones de datos
-  const tiposDocList = tiposDocumento.map(t => t.nombre).join(',');
-  const deptList = departamentos.map(d => d.nombre).join(',');
-
-  // Aplicar validaciones a las filas 2-1000
-  for (let i = 2; i <= 1000; i++) {
-    // Tipo de documento
-    sheet.getCell(`B${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`"${tiposDocList}"`]
-    };
-
-    // Departamento
-    sheet.getCell(`J${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`"${deptList}"`]
-    };
-
-    // Gran Contribuyente (Sí/No)
-    sheet.getCell(`N${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: ['"Sí,No"']
-    };
-  }
-
-  // Ejemplos de clientes
+  // Ejemplos de clientes - AGREGAR PRIMERO ANTES DE LAS VALIDACIONES
   const ejemplosClientes = [
     {
       codigo: 'CLI-001',
@@ -524,6 +496,34 @@ async function createClientesSheet(workbook) {
 
   ejemplosClientes.forEach(cliente => sheet.addRow(cliente));
 
+  // Agregar validaciones de datos DESPUÉS de los ejemplos
+  const tiposDocList = tiposDocumento.map(t => t.nombre).join(',');
+  const deptList = departamentos.map(d => d.nombre).join(',');
+
+  // Aplicar validaciones a las filas 2-1000
+  for (let i = 2; i <= 1000; i++) {
+    // Tipo de documento
+    sheet.getCell(`B${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`"${tiposDocList}"`]
+    };
+
+    // Departamento
+    sheet.getCell(`J${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`"${deptList}"`]
+    };
+
+    // Gran Contribuyente (Sí/No)
+    sheet.getCell(`N${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['"Sí,No"']
+    };
+  }
+
   // Enlace de regreso
   const lastRow = sheet.rowCount + 2;
   sheet.getCell(`A${lastRow}`).value = {
@@ -551,17 +551,7 @@ async function createProductosSheet(workbook) {
 
   styleHeaderRow(sheet.getRow(1));
 
-  // Validación tipo de producto
-  const tiposList = tiposProducto.map(t => t.nombre).join(',');
-  for (let i = 2; i <= 1000; i++) {
-    sheet.getCell(`C${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: false,
-      formulae: [`"${tiposList}"`]
-    };
-  }
-
-  // Ejemplos de productos
+  // Ejemplos de productos - AGREGAR PRIMERO ANTES DE LAS VALIDACIONES
   const ejemplosProductos = [
     { codigo: 'PROD-001', descripcion: 'Laptop Dell Latitude 7420', tipo: 'Gravado (13% IVA)', precio: 850.00, unidad: 'Unidad' },
     { codigo: 'PROD-002', descripcion: 'Medicamento Paracetamol 500mg', tipo: 'Exento (0% IVA)', precio: 2.50, unidad: 'Caja' },
@@ -574,6 +564,16 @@ async function createProductosSheet(workbook) {
   ];
 
   ejemplosProductos.forEach(prod => sheet.addRow(prod));
+
+  // Validación tipo de producto DESPUÉS de agregar ejemplos
+  const tiposList = tiposProducto.map(t => t.nombre).join(',');
+  for (let i = 2; i <= 1000; i++) {
+    sheet.getCell(`C${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: false,
+      formulae: [`"${tiposList}"`]
+    };
+  }
 
   // Formato de moneda
   for (let i = 2; i <= 1000; i++) {
